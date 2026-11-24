@@ -1,0 +1,225 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidLanguage(code) {
+      return code is string && code in ['hi-Latn', 'en', 'ur', 'bn', 'pa', 'ta'];
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 60 &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 240)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             (!('youtubeLink' in data) || (data.youtubeLink is string && data.youtubeLink.size() <= 300)) &&
+             (!('instagramLink' in data) || (data.instagramLink is string && data.instagramLink.size() <= 300)) &&
+             (!('songLink' in data) || (data.songLink is string && data.songLink.size() <= 300)) &&
+             data.selectedThemeId is string &&
+             data.selectedThemeId.size() >= 1 &&
+             data.selectedThemeId.size() <= 50 &&
+             data.selectedAvatarId is string &&
+             data.selectedAvatarId.size() >= 1 &&
+             data.selectedAvatarId.size() <= 50 &&
+             data.selectedOrbId is string &&
+             data.selectedOrbId.size() >= 1 &&
+             data.selectedOrbId.size() <= 50 &&
+             data.codeColorId is string &&
+             data.codeColorId in ['cyan', 'purple', 'orange', 'green', 'blue'] &&
+             isValidLanguage(data.languageCode) &&
+             data.emotionStyle is string &&
+             data.emotionStyle in ['Girlfriend', 'Agent', 'Friendly', 'Professional', 'Assistant'] &&
+             data.emotionLevel is int &&
+             data.emotionLevel >= 1 &&
+             data.emotionLevel <= 5 &&
+             data.keepChatting is bool &&
+             data.heySaniEnabled is bool &&
+             data.voiceName is string &&
+             data.voiceName.size() <= 80 &&
+             data.voiceSensitivity is int &&
+             data.voiceSensitivity >= 1 &&
+             data.voiceSensitivity <= 10 &&
+             data.micStyleId is string &&
+             data.micStyleId.size() >= 1 &&
+             data.micStyleId.size() <= 30 &&
+             data.premiumTier is string &&
+             data.premiumTier in ['free', 'verified'] &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidUserMemory(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.content is string &&
+             data.content.size() >= 1 &&
+             data.content.size() <= 500 &&
+             data.category is string &&
+             data.category.size() >= 1 &&
+             data.category.size() <= 40 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidConversation(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 120 &&
+             data.lastMessagePreview is string &&
+             data.lastMessagePreview.size() <= 300 &&
+             isValidLanguage(data.languageCode) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidMessage(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.role is string &&
+             data.role in ['user', 'model'] &&
+             data.text is string &&
+             data.text.size() >= 1 &&
+             data.text.size() <= 20000 &&
+             data.hasAttachment is bool &&
+             (!('attachmentLabel' in data) || (data.attachmentLabel is string && data.attachmentLabel.size() <= 120)) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'selectedThemeId', 'selectedAvatarId',
+                         'selectedOrbId', 'codeColorId', 'languageCode', 'emotionStyle',
+                         'emotionLevel', 'keepChatting', 'heySaniEnabled', 'voiceName',
+                         'voiceSensitivity', 'micStyleId', 'premiumTier', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'bio', 'photoUrl', 'youtubeLink',
+                         'instagramLink', 'songLink', 'selectedThemeId', 'selectedAvatarId',
+                         'selectedOrbId', 'codeColorId', 'languageCode', 'emotionStyle',
+                         'emotionLevel', 'keepChatting', 'heySaniEnabled', 'voiceName',
+                         'voiceSensitivity', 'micStyleId', 'premiumTier', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'bio', 'photoUrl', 'youtubeLink', 'instagramLink',
+                         'songLink', 'selectedThemeId', 'selectedAvatarId', 'selectedOrbId',
+                         'codeColorId', 'languageCode', 'emotionStyle', 'emotionLevel',
+                         'keepChatting', 'heySaniEnabled', 'voiceName', 'voiceSensitivity',
+                         'micStyleId', 'premiumTier', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /memories/{memoryId} {
+        allow get: if isOwner(userId) && isValidId(memoryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         incoming().keys().hasAll(['userId', 'content', 'category', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'content', 'category', 'createdAt', 'updatedAt']) &&
+                         isValidUserMemory(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidUserMemory(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'category', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(memoryId);
+      }
+
+      match /conversations/{conversationId} {
+        allow get: if isOwner(userId) && isValidId(conversationId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(conversationId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'lastMessagePreview', 'languageCode', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'lastMessagePreview', 'languageCode', 'createdAt', 'updatedAt']) &&
+                         isValidConversation(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(conversationId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidConversation(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'lastMessagePreview', 'languageCode', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(conversationId);
+
+        match /messages/{messageId} {
+          allow get: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+          allow list: if isOwner(userId) && isValidId(conversationId);
+
+          allow create: if isOwner(userId) &&
+                           isValidId(conversationId) &&
+                           isValidId(messageId) &&
+                           exists(/databases/$(database)/documents/users/$(userId)/conversations/$(conversationId)) &&
+                           incoming().keys().hasAll(['userId', 'role', 'text', 'hasAttachment', 'createdAt', 'updatedAt']) &&
+                           incoming().keys().hasOnly(['userId', 'role', 'text', 'hasAttachment', 'attachmentLabel', 'createdAt', 'updatedAt']) &&
+                           isValidMessage(incoming(), userId);
+
+          allow update: if isOwner(userId) &&
+                           isValidId(conversationId) &&
+                           isValidId(messageId) &&
+                           incoming().userId == existing().userId &&
+                           incoming().createdAt == existing().createdAt &&
+                           incoming().role == existing().role &&
+                           isValidMessage(incoming(), userId) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['text', 'hasAttachment', 'attachmentLabel', 'updatedAt']);
+
+          allow delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+        }
+      }
+    }
+  }
+}

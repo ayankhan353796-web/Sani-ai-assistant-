@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile, SANI AI personalization settings, Creator Hub links, and appearance preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "bio": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "youtubeLink": { "type": "string" },
+        "instagramLink": { "type": "string" },
+        "songLink": { "type": "string" },
+        "selectedThemeId": { "type": "string" },
+        "selectedAvatarId": { "type": "string" },
+        "selectedOrbId": { "type": "string" },
+        "codeColorId": { "type": "string", "enum": ["cyan", "purple", "orange", "green", "blue"] },
+        "languageCode": { "type": "string", "enum": ["hi-Latn", "en", "ur", "bn", "pa", "ta"] },
+        "emotionStyle": { "type": "string", "enum": ["Girlfriend", "Agent", "Friendly", "Professional", "Assistant"] },
+        "emotionLevel": { "type": "integer" },
+        "keepChatting": { "type": "boolean" },
+        "heySaniEnabled": { "type": "boolean" },
+        "voiceName": { "type": "string" },
+        "voiceSensitivity": { "type": "integer" },
+        "micStyleId": { "type": "string" },
+        "premiumTier": { "type": "string", "enum": ["free", "verified"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "selectedThemeId",
+        "selectedAvatarId",
+        "selectedOrbId",
+        "codeColorId",
+        "languageCode",
+        "emotionStyle",
+        "emotionLevel",
+        "keepChatting",
+        "heySaniEnabled",
+        "voiceName",
+        "voiceSensitivity",
+        "micStyleId",
+        "premiumTier",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserMemory": {
+      "title": "UserMemory",
+      "description": "User-approved personal memory entries used to personalize SANI responses.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "content", "category", "createdAt", "updatedAt"]
+    },
+    "ChatConversation": {
+      "title": "ChatConversation",
+      "description": "Conversation thread metadata for SANI AI chat.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessagePreview": { "type": "string" },
+        "languageCode": { "type": "string", "enum": ["hi-Latn", "en", "ur", "bn", "pa", "ta"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "title", "lastMessagePreview", "languageCode", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message inside a SANI AI conversation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "hasAttachment": { "type": "boolean" },
+        "attachmentLabel": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "role", "text", "hasAttachment", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile, links, theme, avatar, voice, and AI settings."
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/UserMemory" },
+      "description": "User-approved AI memories stored per user."
+    },
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/ChatConversation" },
+      "description": "User conversation history metadata."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages belonging to a user conversation."
+    }
+  }
+}

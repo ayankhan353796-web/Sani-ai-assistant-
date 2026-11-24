@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Sani AI Assistant</string>
+    <string name="brand_sani">SANI</string>
+    <string name="brand_subtitle">PERSONAL AI • LIVE</string>
+    <string name="accessibility_service_label">Sani Phone Control</string>
+    <string name="accessibility_service_description">Allows SANI AI Assistant to perform user-triggered device navigation and screen lock actions when explicitly requested.</string>
+    <string name="notification_listener_label">Sani Message Reader</string>
+    <string name="tap_to_talk">TAP TO TALK</string>
+    <string name="ask_sani_hint">Ask SANI anything...</string>
 </resources>
