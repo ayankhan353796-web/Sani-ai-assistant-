@@ -1,0 +1,6 @@
+{
+  "name": "Sani AI Assistant",
+  "description": "Sani AI Assistant - Multimodal Gemini AI companion with voice interaction, live camera vision, 28 premium themes, Avatar Studio, and smart Android integrations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
